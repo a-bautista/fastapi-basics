@@ -1,11 +1,13 @@
+# main.py
 from fastapi import FastAPI, HTTPException, Path, Query, Depends
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 from typing import List, Optional
 import uvicorn
-from sqlalchemy import create_engine, Column, Integer, String, Float, Text
+from sqlalchemy import create_engine, Column, Integer, String, Float, Text, Boolean, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 import os
+from datetime import datetime
 
 # Database configuration - read from environment variables or use defaults
 DB_USER = os.getenv("DB_USER", "postgres")
@@ -22,21 +24,23 @@ engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-# Define SQLAlchemy model
-class ItemModel(Base):
-    __tablename__ = "items"
+# Define SQLAlchemy model for User
+class UserModel(Base):
+    __tablename__ = "users"
     
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(50), nullable=False)
-    description = Column(Text, nullable=True)
-    price = Column(Float, nullable=False)
-    tax = Column(Float, nullable=True)
+    username = Column(String(50), unique=True, nullable=False, index=True)
+    email = Column(String(100), unique=True, nullable=False, index=True)
+    hashed_password = Column(String(100), nullable=False)  # In production, use proper password hashing
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 # Initialize FastAPI app
 app = FastAPI(
-    title="Sample API with PostgreSQL",
-    description="A simple API built with FastAPI and PostgreSQL",
-    version="0.2.0"
+    title="Demo App",
+    description="A demo API with FastAPI",
+    version="0.3.0"
 )
 
 # Dependency to get the database session
@@ -47,87 +51,151 @@ def get_db():
     finally:
         db.close()
 
-# Define a Pydantic model for API validation
-class Item(BaseModel):
-    id: Optional[int] = None
-    name: str = Field(..., min_length=1, max_length=50, description="Name of the item")
-    description: Optional[str] = Field(None, max_length=200, description="Description of the item")
-    price: float = Field(..., gt=0, description="Price of the item")
-    tax: Optional[float] = Field(None, ge=0, description="Tax rate for the item")
-    
+# Define Pydantic models for API validation
+class UserBase(BaseModel):
+    username: str = Field(..., min_length=3, max_length=50, description="Unique username")
+    email: str = Field(..., description="User's email address")
+    #full_name: Optional[str] = Field(None, max_length=100, description="User's full name")
+    is_active: Optional[bool] = Field(True, description="Whether the user is active")
+
+class UserCreate(UserBase):
+    password: str = Field(..., min_length=8, description="User's password")
+
+class UserUpdate(BaseModel):
+    username: Optional[str] = Field(None, min_length=3, max_length=50, description="Unique username")
+    email: Optional[str] = Field(None, description="User's email address")
+    #full_name: Optional[str] = Field(None, max_length=100, description="User's full name")
+    is_active: Optional[bool] = Field(None, description="Whether the user is active")
+    password: Optional[str] = Field(None, min_length=8, description="User's password")
+
+class User(UserBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
     class Config:
         orm_mode = True
         schema_extra = {
             "example": {
-                "name": "Laptop",
-                "description": "A high-performance laptop",
-                "price": 999.99,
-                "tax": 0.1
+                "id": 1,
+                "username": "johndoe",
+                "email": "john.doe@example.com",
+                #"full_name": "John Doe",
+                "is_active": True,
+                "created_at": "2023-01-15T10:30:00",
+                "updated_at": "2023-01-15T10:30:00"
             }
         }
 
 # Root endpoint
 @app.get("/")
 async def root():
-    return {"message": "Welcome to my FastAPI application with PostgreSQL!"}
+    return {"message": "Welcome to the API in FastAPI"}
 
-# GET all items
-@app.get("/items/", response_model=List[Item], tags=["Items"])
-async def get_items(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
-    items = db.query(ItemModel).offset(skip).limit(limit).all()
-    return items
-
-# GET a specific item by ID
-@app.get("/items/{item_id}", response_model=Item, tags=["Items"])
-async def get_item(item_id: int = Path(..., title="ID of the item to get", ge=1), db: Session = Depends(get_db)):
-    item = db.query(ItemModel).filter(ItemModel.id == item_id).first()
-    if item is None:
-        raise HTTPException(status_code=404, detail="Item not found")
-    return item
-
-# POST a new item
-@app.post("/items/", response_model=Item, status_code=201, tags=["Items"])
-async def create_item(item: Item, db: Session = Depends(get_db)):
-    db_item = ItemModel(
-        name=item.name,
-        description=item.description,
-        price=item.price,
-        tax=item.tax
-    )
-    db.add(db_item)
-    db.commit()
-    db.refresh(db_item)
-    return db_item
-
-# PUT (update) an existing item
-@app.put("/items/{item_id}", response_model=Item, tags=["Items"])
-async def update_item(
-    item_id: int = Path(..., title="ID of the item to update", ge=1),
-    item: Item = None,
+# GET all users
+@app.get("/users/", response_model=List[User], tags=["Users"])
+async def get_users(
+    skip: int = Query(0, ge=0, description="Number of users to skip"),
+    limit: int = Query(10, ge=1, le=100, description="Maximum number of users to return"),
     db: Session = Depends(get_db)
 ):
-    db_item = db.query(ItemModel).filter(ItemModel.id == item_id).first()
-    if db_item is None:
-        raise HTTPException(status_code=404, detail="Item not found")
+    users = db.query(UserModel).offset(skip).limit(limit).all()
+    return users
+
+# GET a specific user by ID
+@app.get("/users/{user_id}", response_model=User, tags=["Users"])
+async def get_user(
+    user_id: int = Path(..., title="ID of the user to get", ge=1),
+    db: Session = Depends(get_db)
+):
+    user = db.query(UserModel).filter(UserModel.id == user_id).first()
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+# POST a new user
+@app.post("/users/", response_model=User, status_code=201, tags=["Users"])
+async def create_user(user: UserCreate, db: Session = Depends(get_db)):
+    # Check if username already exists
+    db_user = db.query(UserModel).filter(UserModel.username == user.username).first()
+    if db_user:
+        raise HTTPException(status_code=400, detail="Username already registered")
     
-    # Update item fields
-    db_item.name = item.name
-    db_item.description = item.description
-    db_item.price = item.price
-    db_item.tax = item.tax
+    # Check if email already exists
+    db_user = db.query(UserModel).filter(UserModel.email == user.email).first()
+    if db_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    # In a real application, we would hash the password
+    hashed_password = user.password + "_hashed"  # This is just a placeholder
+    
+    db_user = UserModel(
+        username=user.username,
+        email=user.email,
+        #full_name=user.full_name,
+        hashed_password=hashed_password,
+        is_active=user.is_active
+    )
+    
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
+
+# PUT (update) an existing user
+@app.put("/users/{user_id}", response_model=User, tags=["Users"])
+async def update_user(
+    user_id: int = Path(..., title="ID of the user to update", ge=1),
+    user: UserUpdate = None,
+    db: Session = Depends(get_db)
+):
+    db_user = db.query(UserModel).filter(UserModel.id == user_id).first()
+    if db_user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Update username if provided and not already taken
+    if user.username is not None:
+        existing_user = db.query(UserModel).filter(UserModel.username == user.username).first()
+        if existing_user and existing_user.id != user_id:
+            raise HTTPException(status_code=400, detail="Username already taken")
+        db_user.username = user.username
+    
+    # Update email if provided and not already taken
+    if user.email is not None:
+        existing_user = db.query(UserModel).filter(UserModel.email == user.email).first()
+        if existing_user and existing_user.id != user_id:
+            raise HTTPException(status_code=400, detail="Email already taken")
+        db_user.email = user.email
+    
+    # Update other fields if provided
+    #if user.full_name is not None:
+    #    db_user.full_name = user.full_name
+    
+    if user.is_active is not None:
+        db_user.is_active = user.is_active
+    
+    # Update password if provided
+    if user.password is not None:
+        # In a real application, we would hash the password
+        db_user.hashed_password = user.password + "_hashed"  # This is just a placeholder
+    
+    # The updated_at field will be automatically updated due to onupdate=datetime.utcnow
     
     db.commit()
-    db.refresh(db_item)
-    return db_item
+    db.refresh(db_user)
+    return db_user
 
-# DELETE an item
-@app.delete("/items/{item_id}", status_code=204, tags=["Items"])
-async def delete_item(item_id: int = Path(..., title="ID of the item to delete", ge=1), db: Session = Depends(get_db)):
-    db_item = db.query(ItemModel).filter(ItemModel.id == item_id).first()
-    if db_item is None:
-        raise HTTPException(status_code=404, detail="Item not found")
+# DELETE a user
+@app.delete("/users/{user_id}", status_code=204, tags=["Users"])
+async def delete_user(
+    user_id: int = Path(..., title="ID of the user to delete", ge=1),
+    db: Session = Depends(get_db)
+):
+    db_user = db.query(UserModel).filter(UserModel.id == user_id).first()
+    if db_user is None:
+        raise HTTPException(status_code=404, detail="User not found")
     
-    db.delete(db_item)
+    db.delete(db_user)
     db.commit()
     return None
 
@@ -138,14 +206,16 @@ async def startup():
     
     # Add sample data if the database is empty
     db = SessionLocal()
-    if db.query(ItemModel).count() == 0:
-        db_item = ItemModel(
-            name="Sample Item",
-            description="This is a sample item",
-            price=10.99,
-            tax=0.2
+    if db.query(UserModel).count() == 0:
+        # In a real application, we would hash the password
+        db_user = UserModel(
+            username="admin",
+            email="admin@example.com",
+            #full_name="Admin User",
+            hashed_password="admin_password_hashed",  # This is just a placeholder
+            is_active=True
         )
-        db.add(db_item)
+        db.add(db_user)
         db.commit()
     db.close()
 
