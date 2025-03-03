@@ -1,3 +1,4 @@
+# docker-compose.yml
 version: '3.8'
 
 services:
@@ -7,12 +8,8 @@ services:
       - "8000:8000"
     depends_on:
       - db
-    environment:
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
-      - DB_HOST=db  # This should match the service name
-      - DB_PORT=5432
-      - DB_NAME=fastapi_db
+    env_file:
+      - .env
     volumes:
       - ./:/app
     restart: always
@@ -21,10 +18,12 @@ services:
     image: postgres:13
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    env_file:
+      - .env
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=fastapi_db
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
     ports:
       - "5432:5432"
     restart: always
