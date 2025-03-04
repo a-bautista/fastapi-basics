@@ -2,18 +2,18 @@
 from sqlalchemy.orm import Session
 
 from app import crud, schemas
-from app.models.base import Base, engine
-
 
 def init_db(db: Session) -> None:
-    """Initialize database with tables and sample data."""
-    # Create tables
-    Base.metadata.create_all(bind=engine)
+    """
+    Initialize database with sample data.
     
+    Note: No longer creates tables - this is now handled by Alembic migrations.
+    Only seeds initial data if needed.
+    """
     # Check if there are users already
     user = crud.user.get_by_username(db, username="admin")
     if user:
-        return  # Database already initialized
+        return  # Database already initialized with sample data
     
     # Create a sample admin user
     user_in = schemas.UserCreate(
