@@ -90,4 +90,4 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         return super().update(db, db_obj=db_obj, obj_in=update_data)
 
 # Create a singleton instance
-user = CRUDUser(User)
+#user = CRUDUser(User)

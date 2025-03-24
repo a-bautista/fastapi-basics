@@ -1,7 +1,7 @@
 # app/api/v1/router.py
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import users
+from app.api.v1.endpoints import users, prompts
 
 # Create v1 router
 api_router = APIRouter()
