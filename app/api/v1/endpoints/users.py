@@ -1,7 +1,7 @@
 # app/api/v1/endpoints/users.py
 from typing import Any, List
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, relationship
 
 from app import crud, schemas
 from app.crud.user import CRUDUser
