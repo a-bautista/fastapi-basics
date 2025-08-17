@@ -1,9 +1,11 @@
 # app/api/v1/endpoints/prompts.py
 from typing import Any, List
-# Import BaseModel and Field for the custom payload schema
-from pydantic import BaseModel, Field 
-from fastapi import APIRouter, Depends, HTTPException, Path, Query, Body
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Body, Request, Form
+from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
+
+# Import main.py templates object
+from main import templates
 
 # Import CRUD operations, schemas, models, and dependencies
 from app import crud, schemas, models 
@@ -21,18 +23,6 @@ def get_prompt_crud() -> CRUDPrompt:
     Returns a new instance of CRUDPrompt initialized with the Prompt model.
     """
     return CRUDPrompt(Prompt)
-
-# Define a specific payload schema for prompt creation in this auth-less context
-class PromptCreatePayload(schemas.PromptCreate):
-    user_id: int = Field(..., description="The ID of the user creating the prompt")
-
-    class Config:
-        schema_extra = {
-            "example": {
-                "prompt": "How to optimize this query?",
-                "user_id": 1 # Client must provide the user ID
-            }
-        }
 
 @router.get("/", response_model=List[schemas.Prompt])
 def read_prompts(
@@ -58,32 +48,28 @@ def read_prompts(
     #     prompts = prompt_crud.get_multi(db=db, skip=skip, limit=limit)
     return prompts
 
-@router.post("/", response_model=schemas.Prompt, status_code=201)
-def create_prompt(
+@router.post("/", response_class=RedirectResponse, status_code=303)
+async def create_prompt_from_form(
     *,
     db: Session = Depends(get_db),
     prompt_crud: CRUDPrompt = Depends(get_prompt_crud),
-    # Use the combined payload schema requiring prompt and user_id
-    payload: PromptCreatePayload = Body(...) 
-) -> Any:
+    prompt: str = Form(...),
+    user_id: int = Form(...)
+) -> RedirectResponse:
     """
-    Create a new prompt. Requires specifying the user ID in the request body.
-    
-    NOTE: This requires the client to know and send the user_id.
-    This will change when authentication is implemented.
+    Create a new prompt from HTML form data.
+    Redirects to the new prompt's UI page upon successful creation.
     """
     # Optional: Check if the provided user_id actually exists
     # user_crud = CRUDUser(models.User) # Need to get user crud if checking
-    # user = user_crud.get(db, id=payload.user_id)
+    # user = user_crud.get(db, id=user_id)
     # if not user:
-    #     raise HTTPException(status_code=404, detail=f"User with id {payload.user_id} not found")
+    #     raise HTTPException(status_code=404, detail=f"User with id {user_id} not found. Cannot create prompt.")
         
-    # Extract the prompt content into the standard PromptCreate schema
-    prompt_obj_in = schemas.PromptCreate(prompt=payload.prompt)
+    prompt_obj_in = schemas.PromptCreate(prompt=prompt)
     
-    # Use the CRUD method that associates with the provided user_id
-    prompt = prompt_crud.create_with_owner(db=db, obj_in=prompt_obj_in, user_id=payload.user_id)
-    return prompt
+    new_prompt = prompt_crud.create_with_owner(db=db, obj_in=prompt_obj_in, user_id=user_id)
+    return RedirectResponse(url=f"/prompts/ui/{new_prompt.id}", status_code=303)
 
 @router.get("/{prompt_id}", response_model=schemas.Prompt)
 def read_prompt(
@@ -146,3 +132,82 @@ def delete_prompt(
     # Use the injected prompt_crud instance to remove the prompt
     prompt_crud.remove(db=db, id=prompt_id)
     # No return value needed for HTTP 204
+
+
+# UI Endpoints
+@router.get("/ui/", response_class=HTMLResponse)
+async def list_prompts_ui(
+    request: Request,
+    db: Session = Depends(get_db),
+    prompt_crud: CRUDPrompt = Depends(get_prompt_crud),
+    skip: int = 0, # Default to starting from the beginning
+    limit: int = 100 # Default to fetching 100 prompts
+):
+    """
+    Display a list of prompts in an HTML page.
+    """
+    prompts = prompt_crud.get_multi(db=db, skip=skip, limit=limit)
+    return templates.TemplateResponse(
+        "prompts/list_prompts.html", {"request": request, "prompts": prompts}
+    )
+
+@router.get("/ui/{prompt_id}", response_class=HTMLResponse)
+async def view_prompt_ui(
+    request: Request,
+    prompt_id: int = Path(..., title="The ID of the prompt to get", ge=1),
+    db: Session = Depends(get_db),
+    prompt_crud: CRUDPrompt = Depends(get_prompt_crud),
+):
+    """
+    Display a single prompt in an HTML page.
+    """
+    prompt = prompt_crud.get(db, id=prompt_id)
+    if not prompt:
+        # For a UI, it's often better to render a custom 404 page,
+        # but HTTPException is fine for now and will be caught by FastAPI.
+        raise HTTPException(status_code=404, detail="Prompt not found")
+    return templates.TemplateResponse(
+        "prompts/view_prompt.html", {"request": request, "prompt": prompt}
+    )
+
+@router.get("/ui/{prompt_id}/edit", response_class=HTMLResponse)
+async def edit_prompt_ui(
+    request: Request,
+    prompt_id: int = Path(..., title="The ID of the prompt to edit", ge=1),
+    db: Session = Depends(get_db),
+    prompt_crud: CRUDPrompt = Depends(get_prompt_crud),
+):
+    """
+    Display an HTML form for editing a prompt's response.
+    """
+    prompt = prompt_crud.get(db, id=prompt_id)
+    if not prompt:
+        raise HTTPException(status_code=404, detail="Prompt not found")
+    return templates.TemplateResponse(
+        "prompts/edit_prompt.html", {"request": request, "prompt": prompt}
+    )
+
+@router.post("/ui/{prompt_id}/edit", response_class=RedirectResponse, status_code=303)
+async def handle_edit_prompt_form(
+    *,
+    db: Session = Depends(get_db),
+    prompt_crud: CRUDPrompt = Depends(get_prompt_crud),
+    prompt_id: int = Path(..., title="The ID of the prompt to update", ge=1),
+    response: str = Form(...)
+) -> RedirectResponse:
+    """
+    Handle the submission of the prompt edit form.
+    Updates the prompt's response and redirects to the view page.
+    """
+    db_prompt = prompt_crud.get(db, id=prompt_id)
+    if not db_prompt:
+        raise HTTPException(status_code=404, detail="Prompt not found, cannot update.")
+
+    # Ensure 'response' is not None if the schema requires it,
+    # or handle optional updates appropriately.
+    # For this case, we are updating the response field.
+    update_data = schemas.PromptUpdate(response=response)
+
+    prompt_crud.update(db=db, db_obj=db_prompt, obj_in=update_data)
+
+    return RedirectResponse(url=f"/prompts/ui/{prompt_id}", status_code=303)

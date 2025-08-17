@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+  <h1>Edit Prompt #{{ prompt.id }}</h1>
+  <p><strong>Prompt:</strong> {{ prompt.prompt }}</p>
+  <form method="POST" action="/api/v1/prompts/ui/{{ prompt.id }}/edit">
+    <div>
+      <label for="response_text">Response:</label><br>
+      <textarea id="response_text" name="response" rows="4" cols="50">{{ prompt.response if prompt.response else '' }}</textarea>
+    </div>
+    <button type="submit">Update Response</button>
+  </form>
+  <p><a href="/prompts/ui/{{ prompt.id }}">Back to view</a> | <a href="/prompts/ui/">Back to list</a></p>
+{% endblock %}

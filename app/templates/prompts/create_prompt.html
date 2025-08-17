@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+  <h1>Create New Prompt</h1>
+  <form method="POST" action="/api/v1/prompts/"> {# Ensure this action points to your API endpoint for creating prompts #}
+    <div>
+      <label for="prompt_text">Prompt:</label><br>
+      <textarea id="prompt_text" name="prompt" rows="4" cols="50" required></textarea>
+    </div>
+    <div>
+      {# This is a hidden field for user_id. For now, it's hardcoded.
+         In a real application, this would be handled by user authentication. #}
+      <input type="hidden" name="user_id" value="1">
+    </div>
+    <button type="submit">Create Prompt</button>
+  </form>
+  <p><a href="/prompts/ui/">Back to list</a></p>
+{% endblock %}

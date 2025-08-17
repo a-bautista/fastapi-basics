@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block content %}
+  <h1>Prompt #{{ prompt.id }}</h1>
+  <p><strong>Prompt:</strong> {{ prompt.prompt }}</p>
+  <p><strong>Response:</strong> {{ prompt.response if prompt.response else 'N/A' }}</p>
+  <a href="/prompts/ui/">Back to list</a> | <a href="/prompts/ui/{{ prompt.id }}/edit">Edit</a>
+{% endblock %}

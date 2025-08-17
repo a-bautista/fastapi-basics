@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+  <h1>Prompts</h1>
+  <a href="/prompts/ui/new">Create New Prompt</a>
+  <ul>
+    {% for prompt in prompts %}
+      <li>
+        <a href="/prompts/ui/{{ prompt.id }}">{{ prompt.id }}: {{ prompt.prompt|truncate(100) }}</a>
+      </li>
+    {% else %}
+      <li>No prompts yet.</li>
+    {% endfor %}
+  </ul>
+{% endblock %}

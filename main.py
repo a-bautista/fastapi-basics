@@ -1,5 +1,7 @@
 # app/main.py
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.router import api_router
@@ -14,6 +16,12 @@ app = FastAPI(
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
     docs_url="/docs"
 )
+
+# Mount static files
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
+
+# Configure Jinja2 templates
+templates = Jinja2Templates(directory="app/templates")
 
 # Set up CORS middleware
 app.add_middleware(
