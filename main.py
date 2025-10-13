@@ -36,6 +36,11 @@ async def root():
         "api_base_url": settings.API_V1_STR
     }
 
+# Health check endpoint
+@app.get("/health")
+async def health_check():
+    return {"status": "ok"}
+
 # Initialize the database with sample data
 @app.on_event("startup")
 async def startup():
