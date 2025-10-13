@@ -1,84 +1,60 @@
-openapi: 3.0.0
+openapi: 3.1.0
 info:
   title: Fast API
   description: A scalable FastAPI application with PostgreSQL
   version: 0.4.0
-  contact:
-    name: API Support
-servers:
-  - url: http://localhost:8000
-    description: Local development server
-  - url: http://localhost:8000/api/v1
-    description: Local development server (API v1)
-
-tags:
-  - name: users
-    description: User management operations
-  - name: prompts
-    description: Prompt management operations
-
 paths:
-  /:
-    get:
-      summary: Root endpoint
-      description: Welcome message with API information
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Welcome to Fast API!
-                  docs:
-                    type: string
-                    example: /docs
-                  api_base_url:
-                    type: string
-                    example: /api/v1
-
   /api/v1/users/:
     get:
       tags:
         - users
-      summary: Retrieve users
-      description: Get a list of users with pagination
+      summary: Read Users
+      description: Retrieve users.
+      operationId: read_users_api_v1_users__get
       parameters:
         - name: skip
           in: query
-          description: Number of users to skip
           required: false
           schema:
             type: integer
             minimum: 0
+            description: Number of users to skip
             default: 0
+            title: Skip
+          description: Number of users to skip
         - name: limit
           in: query
-          description: Maximum number of users to return
           required: false
           schema:
             type: integer
-            minimum: 1
             maximum: 100
+            minimum: 1
+            description: Maximum number of users to return
             default: 10
+            title: Limit
+          description: Maximum number of users to return
       responses:
         '200':
-          description: Successful response
+          description: Successful Response
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/User'
-
+                title: Response Read Users Api V1 Users Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
     post:
       tags:
         - users
-      summary: Create new user
-      description: Create a new user account
+      summary: Create User
+      description: Create new user.
+      operationId: create_user_api_v1_users__post
       requestBody:
         required: true
         content:
@@ -87,59 +63,59 @@ paths:
               $ref: '#/components/schemas/UserCreate'
       responses:
         '201':
-          description: User created successfully
+          description: Successful Response
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
-        '400':
-          description: Bad request (username or email already taken)
+        '422':
+          description: Validation Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPError'
-
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/users/{user_id}:
     get:
       tags:
         - users
-      summary: Get user by ID
-      description: Retrieve a specific user by their ID
+      summary: Read User
+      description: Get user by ID.
+      operationId: read_user_api_v1_users__user_id__get
       parameters:
         - name: user_id
           in: path
-          description: The ID of the user to get
           required: true
           schema:
             type: integer
             minimum: 1
+            title: The ID of the user to get
       responses:
         '200':
-          description: Successful response
+          description: Successful Response
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
-        '404':
-          description: User not found
+        '422':
+          description: Validation Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPError'
-
+                $ref: '#/components/schemas/HTTPValidationError'
     put:
       tags:
         - users
-      summary: Update a user
-      description: Update an existing user's information
+      summary: Update User
+      description: Update a user.
+      operationId: update_user_api_v1_users__user_id__put
       parameters:
         - name: user_id
           in: path
-          description: The ID of the user to update
           required: true
           schema:
             type: integer
             minimum: 1
+            title: The ID of the user to update
       requestBody:
         required: true
         content:
@@ -148,86 +124,99 @@ paths:
               $ref: '#/components/schemas/UserUpdate'
       responses:
         '200':
-          description: User updated successfully
+          description: Successful Response
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
-        '400':
-          description: Bad request (username or email already taken)
+        '422':
+          description: Validation Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPError'
-        '404':
-          description: User not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPError'
-
+                $ref: '#/components/schemas/HTTPValidationError'
     delete:
       tags:
         - users
-      summary: Delete a user
-      description: Delete a user by their ID
+      summary: Delete User
+      description: Delete a user.
+      operationId: delete_user_api_v1_users__user_id__delete
       parameters:
         - name: user_id
           in: path
-          description: The ID of the user to delete
           required: true
           schema:
             type: integer
             minimum: 1
+            title: The ID of the user to delete
       responses:
         '204':
-          description: User deleted successfully (no content)
-        '404':
-          description: User not found
+          description: Successful Response
+        '422':
+          description: Validation Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPError'
-
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/prompts/:
     get:
       tags:
         - prompts
-      summary: Retrieve prompts
-      description: Get a list of all prompts with pagination. Note - without authentication, this returns all prompts.
+      summary: Read Prompts
+      description: |
+        Retrieve all prompts (no user filtering without authentication).
+
+        NOTE: In a real application with authentication, this would typically
+        be restricted or filtered to the current user's prompts.
+      operationId: read_prompts_api_v1_prompts__get
       parameters:
         - name: skip
           in: query
-          description: Number of prompts to skip
           required: false
           schema:
             type: integer
             minimum: 0
+            description: Number of prompts to skip
             default: 0
+            title: Skip
+          description: Number of prompts to skip
         - name: limit
           in: query
-          description: Maximum number of prompts to return
           required: false
           schema:
             type: integer
-            minimum: 1
             maximum: 100
+            minimum: 1
+            description: Maximum number of prompts to return
             default: 10
+            title: Limit
+          description: Maximum number of prompts to return
       responses:
         '200':
-          description: Successful response
+          description: Successful Response
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Prompt'
-
+                title: Response Read Prompts Api V1 Prompts Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
     post:
       tags:
         - prompts
-      summary: Create a new prompt
-      description: Create a new prompt. Requires specifying the user ID in the request body. This will change when authentication is implemented.
+      summary: Create Prompt
+      description: |
+        Create a new prompt. Requires specifying the user ID in the request body.
+
+        NOTE: This requires the client to know and send the user_id.
+        This will change when authentication is implemented.
+      operationId: create_prompt_api_v1_prompts__post
       requestBody:
         required: true
         content:
@@ -236,59 +225,65 @@ paths:
               $ref: '#/components/schemas/PromptCreatePayload'
       responses:
         '201':
-          description: Prompt created successfully
+          description: Successful Response
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Prompt'
-        '400':
-          description: Bad request
+        '422':
+          description: Validation Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPError'
-
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/prompts/{prompt_id}:
     get:
       tags:
         - prompts
-      summary: Get a specific prompt by ID
-      description: Retrieve a prompt by its ID. Without authentication, any existing prompt ID can be accessed.
+      summary: Read Prompt
+      description: |
+        Get a specific prompt by ID. (No authorization check).
+
+        NOTE: Without authentication, any existing prompt ID can be accessed.
+      operationId: read_prompt_api_v1_prompts__prompt_id__get
       parameters:
         - name: prompt_id
           in: path
-          description: The ID of the prompt to get
           required: true
           schema:
             type: integer
             minimum: 1
+            title: The ID of the prompt to get
       responses:
         '200':
-          description: Successful response
+          description: Successful Response
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Prompt'
-        '404':
-          description: Prompt not found
+        '422':
+          description: Validation Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPError'
-
+                $ref: '#/components/schemas/HTTPValidationError'
     put:
       tags:
         - prompts
-      summary: Update a specific prompt
-      description: Update an existing prompt. Without authentication, any existing prompt can be updated.
+      summary: Update Prompt
+      description: |
+        Update a specific prompt. (No authorization check).
+
+        NOTE: Without authentication, any existing prompt can be updated.
+      operationId: update_prompt_api_v1_prompts__prompt_id__put
       parameters:
         - name: prompt_id
           in: path
-          description: The ID of the prompt to update
           required: true
           schema:
             type: integer
             minimum: 1
+            title: The ID of the prompt to update
       requestBody:
         required: true
         content:
@@ -297,185 +292,313 @@ paths:
               $ref: '#/components/schemas/PromptUpdate'
       responses:
         '200':
-          description: Prompt updated successfully
+          description: Successful Response
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Prompt'
-        '404':
-          description: Prompt not found
+        '422':
+          description: Validation Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPError'
-
+                $ref: '#/components/schemas/HTTPValidationError'
     delete:
       tags:
         - prompts
-      summary: Delete a specific prompt
-      description: Delete a prompt by its ID. Without authentication, any existing prompt can be deleted.
+      summary: Delete Prompt
+      description: |
+        Delete a specific prompt. (No authorization check).
+
+        NOTE: Without authentication, any existing prompt can be deleted.
+        Returns HTTP 204 No Content on successful deletion.
+      operationId: delete_prompt_api_v1_prompts__prompt_id__delete
       parameters:
         - name: prompt_id
           in: path
-          description: The ID of the prompt to delete
           required: true
           schema:
             type: integer
             minimum: 1
+            title: The ID of the prompt to delete
       responses:
         '204':
-          description: Prompt deleted successfully (no content)
-        '404':
-          description: Prompt not found
+          description: Successful Response
+        '422':
+          description: Validation Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPError'
-
+                $ref: '#/components/schemas/HTTPValidationError'
+  /:
+    get:
+      summary: Root
+      operationId: root__get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /health:
+    get:
+      summary: Health Check
+      operationId: health_check_health_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /login:
+    get:
+      summary: Login Form
+      operationId: login_form_login_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            text/html:
+              schema:
+                type: string
+    post:
+      summary: Handle Login
+      operationId: handle_login_login_post
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Body_handle_login_login_post'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /profile:
+    get:
+      summary: Profile
+      operationId: profile_profile_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            text/html:
+              schema:
+                type: string
+  /logout:
+    get:
+      summary: Logout
+      operationId: logout_logout_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
 components:
   schemas:
-    User:
-      type: object
-      required:
-        - id
-        - username
-        - email
-        - created_at
-        - updated_at
+    Body_handle_login_login_post:
       properties:
-        id:
-          type: integer
-          example: 1
         username:
           type: string
-          minLength: 3
+          title: Username
+        password:
+          type: string
+          title: Password
+      type: object
+      required:
+        - username
+        - password
+      title: Body_handle_login_login_post
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    Prompt:
+      properties:
+        prompt:
+          type: string
+          title: Prompt
+          description: Content of the user's prompt
+        response:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Response
+          description: Generated response to the prompt
+        id:
+          type: integer
+          title: Id
+        user_id:
+          type: integer
+          title: User Id
+      type: object
+      required:
+        - prompt
+        - id
+        - user_id
+      title: Prompt
+      description: Schema for representing a prompt in API responses.
+    PromptCreatePayload:
+      properties:
+        prompt:
+          type: string
+          minLength: 5
+          title: Prompt
+          description: Content of the prompt to be processed
+        user_id:
+          type: integer
+          title: User Id
+          description: The ID of the user creating the prompt
+      type: object
+      required:
+        - prompt
+        - user_id
+      title: PromptCreatePayload
+    PromptUpdate:
+      properties:
+        response:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Response
+          description: Updated or regenerated response
+      type: object
+      title: PromptUpdate
+      description: Schema for updating an existing prompt.
+    User:
+      properties:
+        username:
+          type: string
           maxLength: 50
+          minLength: 3
+          title: Username
           description: Unique username
-          example: johndoe
         email:
           type: string
+          title: Email
           description: User's email address
-          example: john.doe@example.com
         is_active:
-          type: boolean
+          anyOf:
+            - type: boolean
+            - type: 'null'
+          title: Is Active
           description: Whether the user is active
           default: true
-          example: true
+        id:
+          type: integer
+          title: Id
         created_at:
           type: string
           format: date-time
-          description: Timestamp when the user was created
-          example: "2023-01-15T10:30:00"
+          title: Created At
         updated_at:
           type: string
           format: date-time
-          description: Timestamp when the user was last updated
-          example: "2023-01-15T10:30:00"
-
+          title: Updated At
+      type: object
+      required:
+        - username
+        - email
+        - id
+        - created_at
+        - updated_at
+      title: User
+      description: Schema for user responses
     UserCreate:
+      properties:
+        username:
+          type: string
+          maxLength: 50
+          minLength: 3
+          title: Username
+          description: Unique username
+        email:
+          type: string
+          title: Email
+          description: User's email address
+        is_active:
+          anyOf:
+            - type: boolean
+            - type: 'null'
+          title: Is Active
+          description: Whether the user is active
+          default: true
+        password:
+          type: string
+          minLength: 8
+          title: Password
+          description: User's password
       type: object
       required:
         - username
         - email
         - password
-      properties:
-        username:
-          type: string
-          minLength: 3
-          maxLength: 50
-          description: Unique username
-          example: johndoe
-        email:
-          type: string
-          description: User's email address
-          example: john.doe@example.com
-        password:
-          type: string
-          minLength: 8
-          description: User's password
-          example: securepassword
-        is_active:
-          type: boolean
-          description: Whether the user is active
-          default: true
-          example: true
-
+      title: UserCreate
+      description: Schema for creating a new user
     UserUpdate:
-      type: object
       properties:
         username:
-          type: string
-          minLength: 3
-          maxLength: 50
+          anyOf:
+            - type: string
+              maxLength: 50
+              minLength: 3
+            - type: 'null'
+          title: Username
           description: Unique username
-          example: johndoe
         email:
-          type: string
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Email
           description: User's email address
-          example: john.doe@example.com
-        password:
-          type: string
-          minLength: 8
-          description: User's password
-          example: newsecurepassword
         is_active:
-          type: boolean
+          anyOf:
+            - type: boolean
+            - type: 'null'
+          title: Is Active
           description: Whether the user is active
-          example: true
-
-    Prompt:
+        password:
+          anyOf:
+            - type: string
+              minLength: 8
+            - type: 'null'
+          title: Password
+          description: User's password
+      type: object
+      title: UserUpdate
+      description: Schema for updating an existing user
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+              - type: string
+              - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
       type: object
       required:
-        - id
-        - prompt
-        - user_id
-      properties:
-        id:
-          type: integer
-          example: 123
-        prompt:
-          type: string
-          description: Content of the user's prompt
-          example: How can I optimize this Python list comprehension for speed?
-        response:
-          type: string
-          nullable: true
-          description: Generated response to the prompt
-          example: Using list comprehensions is generally fast in Python. Show me the code for specific advice.
-        user_id:
-          type: integer
-          description: ID of the user who owns the prompt
-          example: 1
-
-    PromptCreatePayload:
-      type: object
-      required:
-        - prompt
-        - user_id
-      properties:
-        prompt:
-          type: string
-          minLength: 5
-          description: Content of the prompt to be processed
-          example: How to optimize this query?
-        user_id:
-          type: integer
-          description: The ID of the user creating the prompt
-          example: 1
-
-    PromptUpdate:
-      type: object
-      properties:
-        response:
-          type: string
-          nullable: true
-          description: Updated or regenerated response
-          example: Consider using a generator expression if memory is also a concern.
-
-    HTTPError:
-      type: object
-      properties:
-        detail:
-          type: string
-          description: Error message
-          example: User not found
+        - loc
+        - msg
+        - type
+      title: ValidationError
