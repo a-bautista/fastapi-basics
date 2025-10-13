@@ -1,0 +1,481 @@
+openapi: 3.0.0
+info:
+  title: Fast API
+  description: A scalable FastAPI application with PostgreSQL
+  version: 0.4.0
+  contact:
+    name: API Support
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+  - url: http://localhost:8000/api/v1
+    description: Local development server (API v1)
+
+tags:
+  - name: users
+    description: User management operations
+  - name: prompts
+    description: Prompt management operations
+
+paths:
+  /:
+    get:
+      summary: Root endpoint
+      description: Welcome message with API information
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Welcome to Fast API!
+                  docs:
+                    type: string
+                    example: /docs
+                  api_base_url:
+                    type: string
+                    example: /api/v1
+
+  /api/v1/users/:
+    get:
+      tags:
+        - users
+      summary: Retrieve users
+      description: Get a list of users with pagination
+      parameters:
+        - name: skip
+          in: query
+          description: Number of users to skip
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: limit
+          in: query
+          description: Maximum number of users to return
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+
+    post:
+      tags:
+        - users
+      summary: Create new user
+      description: Create a new user account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Bad request (username or email already taken)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPError'
+
+  /api/v1/users/{user_id}:
+    get:
+      tags:
+        - users
+      summary: Get user by ID
+      description: Retrieve a specific user by their ID
+      parameters:
+        - name: user_id
+          in: path
+          description: The ID of the user to get
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPError'
+
+    put:
+      tags:
+        - users
+      summary: Update a user
+      description: Update an existing user's information
+      parameters:
+        - name: user_id
+          in: path
+          description: The ID of the user to update
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdate'
+      responses:
+        '200':
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Bad request (username or email already taken)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPError'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPError'
+
+    delete:
+      tags:
+        - users
+      summary: Delete a user
+      description: Delete a user by their ID
+      parameters:
+        - name: user_id
+          in: path
+          description: The ID of the user to delete
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '204':
+          description: User deleted successfully (no content)
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPError'
+
+  /api/v1/prompts/:
+    get:
+      tags:
+        - prompts
+      summary: Retrieve prompts
+      description: Get a list of all prompts with pagination. Note - without authentication, this returns all prompts.
+      parameters:
+        - name: skip
+          in: query
+          description: Number of prompts to skip
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: limit
+          in: query
+          description: Maximum number of prompts to return
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Prompt'
+
+    post:
+      tags:
+        - prompts
+      summary: Create a new prompt
+      description: Create a new prompt. Requires specifying the user ID in the request body. This will change when authentication is implemented.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PromptCreatePayload'
+      responses:
+        '201':
+          description: Prompt created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prompt'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPError'
+
+  /api/v1/prompts/{prompt_id}:
+    get:
+      tags:
+        - prompts
+      summary: Get a specific prompt by ID
+      description: Retrieve a prompt by its ID. Without authentication, any existing prompt ID can be accessed.
+      parameters:
+        - name: prompt_id
+          in: path
+          description: The ID of the prompt to get
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prompt'
+        '404':
+          description: Prompt not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPError'
+
+    put:
+      tags:
+        - prompts
+      summary: Update a specific prompt
+      description: Update an existing prompt. Without authentication, any existing prompt can be updated.
+      parameters:
+        - name: prompt_id
+          in: path
+          description: The ID of the prompt to update
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PromptUpdate'
+      responses:
+        '200':
+          description: Prompt updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prompt'
+        '404':
+          description: Prompt not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPError'
+
+    delete:
+      tags:
+        - prompts
+      summary: Delete a specific prompt
+      description: Delete a prompt by its ID. Without authentication, any existing prompt can be deleted.
+      parameters:
+        - name: prompt_id
+          in: path
+          description: The ID of the prompt to delete
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '204':
+          description: Prompt deleted successfully (no content)
+        '404':
+          description: Prompt not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPError'
+
+components:
+  schemas:
+    User:
+      type: object
+      required:
+        - id
+        - username
+        - email
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: integer
+          example: 1
+        username:
+          type: string
+          minLength: 3
+          maxLength: 50
+          description: Unique username
+          example: johndoe
+        email:
+          type: string
+          description: User's email address
+          example: john.doe@example.com
+        is_active:
+          type: boolean
+          description: Whether the user is active
+          default: true
+          example: true
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when the user was created
+          example: "2023-01-15T10:30:00"
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp when the user was last updated
+          example: "2023-01-15T10:30:00"
+
+    UserCreate:
+      type: object
+      required:
+        - username
+        - email
+        - password
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 50
+          description: Unique username
+          example: johndoe
+        email:
+          type: string
+          description: User's email address
+          example: john.doe@example.com
+        password:
+          type: string
+          minLength: 8
+          description: User's password
+          example: securepassword
+        is_active:
+          type: boolean
+          description: Whether the user is active
+          default: true
+          example: true
+
+    UserUpdate:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 50
+          description: Unique username
+          example: johndoe
+        email:
+          type: string
+          description: User's email address
+          example: john.doe@example.com
+        password:
+          type: string
+          minLength: 8
+          description: User's password
+          example: newsecurepassword
+        is_active:
+          type: boolean
+          description: Whether the user is active
+          example: true
+
+    Prompt:
+      type: object
+      required:
+        - id
+        - prompt
+        - user_id
+      properties:
+        id:
+          type: integer
+          example: 123
+        prompt:
+          type: string
+          description: Content of the user's prompt
+          example: How can I optimize this Python list comprehension for speed?
+        response:
+          type: string
+          nullable: true
+          description: Generated response to the prompt
+          example: Using list comprehensions is generally fast in Python. Show me the code for specific advice.
+        user_id:
+          type: integer
+          description: ID of the user who owns the prompt
+          example: 1
+
+    PromptCreatePayload:
+      type: object
+      required:
+        - prompt
+        - user_id
+      properties:
+        prompt:
+          type: string
+          minLength: 5
+          description: Content of the prompt to be processed
+          example: How to optimize this query?
+        user_id:
+          type: integer
+          description: The ID of the user creating the prompt
+          example: 1
+
+    PromptUpdate:
+      type: object
+      properties:
+        response:
+          type: string
+          nullable: true
+          description: Updated or regenerated response
+          example: Consider using a generator expression if memory is also a concern.
+
+    HTTPError:
+      type: object
+      properties:
+        detail:
+          type: string
+          description: Error message
+          example: User not found
