@@ -47,8 +47,16 @@ Added basic configuration to run the application locally through a virtual envir
 
 Added configuration to run the application through Docker. 
 
-# Version 0.2.0: 0ee0fba
+# Architecture pattern:
+The architecture pattern used in this project is a **modular monolith** with a layered architecture. The main layers are:
 
+1. Presentation Layer (API): Handles HTTP requests and responses using FastAPI.
+2. Business Logic Layer (Services): Contains the core business logic and rules.
+3. Data Access Layer (CRUD): Manages database operations using SQLAlchemy.
+4. Models and Schemas: Define the structure of the data using SQLAlchemy models and Pydantic schemas for the Data Transfer Objects (DTOs).
+
+
+# Version 0.2.0: 0ee0fba
 
 1. Authentication and Authorization
 
