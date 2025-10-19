@@ -55,6 +55,13 @@ The architecture pattern used in this project is a **modular monolith** with a l
 3. Data Access Layer (CRUD): Manages database operations using SQLAlchemy.
 4. Models and Schemas: Define the structure of the data using SQLAlchemy models and Pydantic schemas for the Data Transfer Objects (DTOs).
 
+# Design patterns:
+1. Repository Pattern: It separates the data access logic and maps it to the business entities in the business logic layer, 
+i.e., CRUDUser and CRUDPrompt retrieves the data from the database and provides the generic endpoints such as get, create and 
+remove. 
+2. Dependency Injection: An object receives other objects that it depends on.
+3. Data Transfer Objects (DTO): Pydantic schemas are used to define the structure of the objects that are sent between the client and server.
+4. Facade pattern: The API router acts as a facade that simplifies the interaction between the client and the underlying services and data access layers.
 
 # Version 0.2.0: 0ee0fba
 
