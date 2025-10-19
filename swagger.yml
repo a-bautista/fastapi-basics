@@ -1,0 +1,604 @@
+openapi: 3.1.0
+info:
+  title: Fast API
+  description: A scalable FastAPI application with PostgreSQL
+  version: 0.4.0
+paths:
+  /api/v1/users/:
+    get:
+      tags:
+        - users
+      summary: Read Users
+      description: Retrieve users.
+      operationId: read_users_api_v1_users__get
+      parameters:
+        - name: skip
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            description: Number of users to skip
+            default: 0
+            title: Skip
+          description: Number of users to skip
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            maximum: 100
+            minimum: 1
+            description: Maximum number of users to return
+            default: 10
+            title: Limit
+          description: Maximum number of users to return
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+                title: Response Read Users Api V1 Users Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+        - users
+      summary: Create User
+      description: Create new user.
+      operationId: create_user_api_v1_users__post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/users/{user_id}:
+    get:
+      tags:
+        - users
+      summary: Read User
+      description: Get user by ID.
+      operationId: read_user_api_v1_users__user_id__get
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            title: The ID of the user to get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+        - users
+      summary: Update User
+      description: Update a user.
+      operationId: update_user_api_v1_users__user_id__put
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            title: The ID of the user to update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+        - users
+      summary: Delete User
+      description: Delete a user.
+      operationId: delete_user_api_v1_users__user_id__delete
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            title: The ID of the user to delete
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/prompts/:
+    get:
+      tags:
+        - prompts
+      summary: Read Prompts
+      description: |
+        Retrieve all prompts (no user filtering without authentication).
+
+        NOTE: In a real application with authentication, this would typically
+        be restricted or filtered to the current user's prompts.
+      operationId: read_prompts_api_v1_prompts__get
+      parameters:
+        - name: skip
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            description: Number of prompts to skip
+            default: 0
+            title: Skip
+          description: Number of prompts to skip
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            maximum: 100
+            minimum: 1
+            description: Maximum number of prompts to return
+            default: 10
+            title: Limit
+          description: Maximum number of prompts to return
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Prompt'
+                title: Response Read Prompts Api V1 Prompts Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+        - prompts
+      summary: Create Prompt
+      description: |
+        Create a new prompt. Requires specifying the user ID in the request body.
+
+        NOTE: This requires the client to know and send the user_id.
+        This will change when authentication is implemented.
+      operationId: create_prompt_api_v1_prompts__post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PromptCreatePayload'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prompt'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/prompts/{prompt_id}:
+    get:
+      tags:
+        - prompts
+      summary: Read Prompt
+      description: |
+        Get a specific prompt by ID. (No authorization check).
+
+        NOTE: Without authentication, any existing prompt ID can be accessed.
+      operationId: read_prompt_api_v1_prompts__prompt_id__get
+      parameters:
+        - name: prompt_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            title: The ID of the prompt to get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prompt'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+        - prompts
+      summary: Update Prompt
+      description: |
+        Update a specific prompt. (No authorization check).
+
+        NOTE: Without authentication, any existing prompt can be updated.
+      operationId: update_prompt_api_v1_prompts__prompt_id__put
+      parameters:
+        - name: prompt_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            title: The ID of the prompt to update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PromptUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prompt'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+        - prompts
+      summary: Delete Prompt
+      description: |
+        Delete a specific prompt. (No authorization check).
+
+        NOTE: Without authentication, any existing prompt can be deleted.
+        Returns HTTP 204 No Content on successful deletion.
+      operationId: delete_prompt_api_v1_prompts__prompt_id__delete
+      parameters:
+        - name: prompt_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            title: The ID of the prompt to delete
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /:
+    get:
+      summary: Root
+      operationId: root__get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /health:
+    get:
+      summary: Health Check
+      operationId: health_check_health_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /login:
+    get:
+      summary: Login Form
+      operationId: login_form_login_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            text/html:
+              schema:
+                type: string
+    post:
+      summary: Handle Login
+      operationId: handle_login_login_post
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Body_handle_login_login_post'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /profile:
+    get:
+      summary: Profile
+      operationId: profile_profile_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            text/html:
+              schema:
+                type: string
+  /logout:
+    get:
+      summary: Logout
+      operationId: logout_logout_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+components:
+  schemas:
+    Body_handle_login_login_post:
+      properties:
+        username:
+          type: string
+          title: Username
+        password:
+          type: string
+          title: Password
+      type: object
+      required:
+        - username
+        - password
+      title: Body_handle_login_login_post
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    Prompt:
+      properties:
+        prompt:
+          type: string
+          title: Prompt
+          description: Content of the user's prompt
+        response:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Response
+          description: Generated response to the prompt
+        id:
+          type: integer
+          title: Id
+        user_id:
+          type: integer
+          title: User Id
+      type: object
+      required:
+        - prompt
+        - id
+        - user_id
+      title: Prompt
+      description: Schema for representing a prompt in API responses.
+    PromptCreatePayload:
+      properties:
+        prompt:
+          type: string
+          minLength: 5
+          title: Prompt
+          description: Content of the prompt to be processed
+        user_id:
+          type: integer
+          title: User Id
+          description: The ID of the user creating the prompt
+      type: object
+      required:
+        - prompt
+        - user_id
+      title: PromptCreatePayload
+    PromptUpdate:
+      properties:
+        response:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Response
+          description: Updated or regenerated response
+      type: object
+      title: PromptUpdate
+      description: Schema for updating an existing prompt.
+    User:
+      properties:
+        username:
+          type: string
+          maxLength: 50
+          minLength: 3
+          title: Username
+          description: Unique username
+        email:
+          type: string
+          title: Email
+          description: User's email address
+        is_active:
+          anyOf:
+            - type: boolean
+            - type: 'null'
+          title: Is Active
+          description: Whether the user is active
+          default: true
+        id:
+          type: integer
+          title: Id
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        updated_at:
+          type: string
+          format: date-time
+          title: Updated At
+      type: object
+      required:
+        - username
+        - email
+        - id
+        - created_at
+        - updated_at
+      title: User
+      description: Schema for user responses
+    UserCreate:
+      properties:
+        username:
+          type: string
+          maxLength: 50
+          minLength: 3
+          title: Username
+          description: Unique username
+        email:
+          type: string
+          title: Email
+          description: User's email address
+        is_active:
+          anyOf:
+            - type: boolean
+            - type: 'null'
+          title: Is Active
+          description: Whether the user is active
+          default: true
+        password:
+          type: string
+          minLength: 8
+          title: Password
+          description: User's password
+      type: object
+      required:
+        - username
+        - email
+        - password
+      title: UserCreate
+      description: Schema for creating a new user
+    UserUpdate:
+      properties:
+        username:
+          anyOf:
+            - type: string
+              maxLength: 50
+              minLength: 3
+            - type: 'null'
+          title: Username
+          description: Unique username
+        email:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Email
+          description: User's email address
+        is_active:
+          anyOf:
+            - type: boolean
+            - type: 'null'
+          title: Is Active
+          description: Whether the user is active
+        password:
+          anyOf:
+            - type: string
+              minLength: 8
+            - type: 'null'
+          title: Password
+          description: User's password
+      type: object
+      title: UserUpdate
+      description: Schema for updating an existing user
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+              - type: string
+              - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+      type: object
+      required:
+        - loc
+        - msg
+        - type
+      title: ValidationError
