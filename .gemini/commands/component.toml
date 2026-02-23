@@ -1,0 +1,15 @@
+description = "Create a UI component using TDD"
+
+prompt = """
+The user wants to create a UI component: {{args}}
+
+Please follow these steps:
+1. Determine a PascalCase name for the component.
+2. Write tests first in `tests/components/[ComponentName].test.tsx`.
+3. Create the component in `components/[ComponentName]/`.
+4. Run tests and iterate.
+5. Add to the preview page.
+
+Context:
+@{app/templates/base.html}
+"""

@@ -1,5 +1,5 @@
 # app/crud/prompt.py
-from typing import Any, List
+from typing import List
 from sqlalchemy.orm import Session
 
 from app.crud.base import CRUDBase

@@ -37,15 +37,7 @@ project_root/
 
 # How to run the application locally?
 
-docker-compose up --build
-
-# Version 0: abc52a9
-
-Added basic configuration to run the application locally through a virtual environment in Python 3.11.9
-
-# Version 0.1.0: 605f81a
-
-Added configuration to run the application through Docker. 
+`docker-compose up --build`
 
 # Architecture pattern:
 The architecture pattern used in this project is a **modular monolith** with a layered architecture. The main layers are:
@@ -63,7 +55,7 @@ remove.
 3. Data Transfer Objects (DTO): Pydantic schemas are used to define the structure of the objects that are sent between the client and server.
 4. Facade pattern: The API router acts as a facade that simplifies the interaction between the client and the underlying services and data access layers.
 
-# Version 0.2.0: 0ee0fba
+# To-do list for future improvements:
 
 1. Authentication and Authorization
 
